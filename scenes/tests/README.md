@@ -23,6 +23,7 @@ game_start(scene_path="res://scenes/tests/frame_solver_validation.tscn")
 | `thermal_fire_validation.tscn` | 부재 가열·냉각, 재료 열응답, 열전도 에너지, 자유 열팽창, 고온 강도/Failure Mechanics 연동 | `[THERMAL_FIRE_TEST]` |
 | `fluid_flood_validation.tscn` | 정수압 깊이/합력, 부력, 시간 침수, 프레임 분포하중·처짐 | `[FLUID_FLOOD_TEST]` |
 | `wind_dynamic_validation.tscn` | 풍속 높이분포·정압, 방향·돌풍, 가새 변위, Newmark 진동, 지진 관성하중 합산 | `[WIND_DYNAMIC_TEST]` |
+| `disaster_scenario_validation.tscn` | 단일·순차·동시·복합 이벤트, 일시정지, 설정/결과 저장·불러오기, 입력 해시, 시간표 재생, 실험 비교 | `[DISASTER_SCENARIO_TEST]` |
 
 기본 게임 씬의 5층 통합 지진 검증은 `/root/DisasterLab` 노드에서 다음 메서드를 호출하고, `validation_result_status`와 `user://earthquake_validation.csv`를 확인한다.
 
