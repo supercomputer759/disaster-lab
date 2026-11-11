@@ -504,6 +504,10 @@ func _reduce_vector(vector: Array[float], free_dofs: Array[int]) -> Array[float]
 	return reduced
 
 
+func solve_linear_system(matrix: Array, right_hand_side: Array[float]) -> Dictionary:
+	return _solve(matrix, right_hand_side)
+
+
 func _solve(matrix: Array, right_hand_side: Array[float]) -> Dictionary:
 	var size := right_hand_side.size()
 	if size == 0:
