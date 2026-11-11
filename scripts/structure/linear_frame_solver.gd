@@ -15,7 +15,8 @@ func analyze(
 	materials: Dictionary,
 	loads: Dictionary,
 	supports: Dictionary,
-	connections: Array = []
+	connections: Array = [],
+	thermal_strains_by_element: Dictionary = {}
 ) -> Dictionary:
 	var node_ids: Array[String] = []
 	var node_positions: Array[Vector2] = []
@@ -82,6 +83,15 @@ func analyze(
 			index_j * 3, index_j * 3 + 1, index_j * 3 + 2
 		]
 		_assemble_matrix(global_stiffness, global_element_stiffness, element_dofs)
+		var thermal_strain := float(thermal_strains_by_element.get(element_id, 0.0))
+		if not is_finite(thermal_strain):
+			return _error("요소 %s의 열변형률이 유한하지 않아." % element_id)
+		var thermal_local_load := _zero_vector(6)
+		thermal_local_load[0] = -elastic_modulus_pa * area_m2 * thermal_strain
+		thermal_local_load[3] = elastic_modulus_pa * area_m2 * thermal_strain
+		for local_dof in range(6):
+			for global_dof in range(6):
+				load_vector[element_dofs[global_dof]] += transform[local_dof][global_dof] * thermal_local_load[local_dof]
 		element_cache.append({
 			"id": element_id,
 			"material_id": str(element["material_id"]),
@@ -96,6 +106,8 @@ func analyze(
 			"inertia_m4": inertia_m4,
 			"depth_m": depth_m,
 			"local_stiffness": local_stiffness,
+			"thermal_strain": thermal_strain,
+			"thermal_local_load": thermal_local_load,
 			"transform": transform,
 			"dofs": element_dofs
 		})
@@ -196,6 +208,8 @@ func analyze(
 	for data in element_cache:
 		var local_displacement := _local_displacement(displacement_vector, data["dofs"], data["transform"])
 		var local_end_forces := _matrix_vector(data["local_stiffness"], local_displacement)
+		for local_dof in range(6):
+			local_end_forces[local_dof] -= float(data["thermal_local_load"][local_dof])
 		var axial_i := -float(local_end_forces[0])
 		var axial_j := float(local_end_forces[3])
 		var shear_i := float(local_end_forces[1])
@@ -241,6 +255,7 @@ func analyze(
 			"axial_strain": axial_strain,
 			"maximum_normal_strain": maximum_normal_strain,
 			"maximum_internal_deflection_m": internal_deflection,
+			"thermal_strain": data["thermal_strain"],
 			"material_limit_evaluation": material_evaluation
 		}
 

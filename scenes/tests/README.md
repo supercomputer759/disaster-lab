@@ -20,6 +20,7 @@ game_start(scene_path="res://scenes/tests/frame_solver_validation.tscn")
 | `central_member_fracture_validation.tscn` | 정지·이동·회전 중앙 파단, 운동량, Joint 재매핑, 바닥 충돌 | `[TASK06_TEST_RESULT]` |
 | `material_system_validation.tscn` | 프리셋·사용자 재료·질량·재료별 솔버 응답 | `[MATERIAL_TEST]` |
 | `failure_mechanics_validation.tscn` | Euler 좌굴, Miner 누적, 균열 위치, 정적 하중 재분배/연쇄 제거 | `[FAILURE_MECHANICS_TEST]` |
+| `thermal_fire_validation.tscn` | 부재 가열·냉각, 재료 열응답, 열전도 에너지, 자유 열팽창, 고온 강도/Failure Mechanics 연동 | `[THERMAL_FIRE_TEST]` |
 
 기본 게임 씬의 5층 통합 지진 검증은 `/root/DisasterLab` 노드에서 다음 메서드를 호출하고, `validation_result_status`와 `user://earthquake_validation.csv`를 확인한다.
 
