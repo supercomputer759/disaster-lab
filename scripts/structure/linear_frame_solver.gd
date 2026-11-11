@@ -14,7 +14,8 @@ func analyze(
 	elements: Array,
 	materials: Dictionary,
 	loads: Dictionary,
-	supports: Dictionary
+	supports: Dictionary,
+	connections: Array = []
 ) -> Dictionary:
 	var node_ids: Array[String] = []
 	var node_positions: Array[Vector2] = []
@@ -94,6 +95,44 @@ func analyze(
 			"local_stiffness": local_stiffness,
 			"transform": transform,
 			"dofs": element_dofs
+		})
+
+	var connection_cache: Array[Dictionary] = []
+	var connection_ids: Dictionary = {}
+	for connection in connections:
+		var validation_error := _validate_connection(connection, node_index_by_id, connection_ids)
+		if not validation_error.is_empty():
+			return _error(validation_error)
+		var connection_id := str(connection["id"])
+		var node_a := str(connection["node_a"])
+		var node_b := str(connection["node_b"])
+		var index_a: int = int(node_index_by_id[node_a])
+		var index_b: int = int(node_index_by_id[node_b])
+		var offset_a := index_a * DOF_PER_NODE
+		var offset_b := index_b * DOF_PER_NODE
+		var translational_stiffness := float(connection["translational_stiffness_n_m"])
+		var rotational_stiffness := float(connection["rotational_stiffness_nm_rad"])
+		for axis in range(2):
+			var dof_a := offset_a + axis
+			var dof_b := offset_b + axis
+			global_stiffness[dof_a][dof_a] += translational_stiffness
+			global_stiffness[dof_b][dof_b] += translational_stiffness
+			global_stiffness[dof_a][dof_b] -= translational_stiffness
+			global_stiffness[dof_b][dof_a] -= translational_stiffness
+		var rotation_a := offset_a + 2
+		var rotation_b := offset_b + 2
+		global_stiffness[rotation_a][rotation_a] += rotational_stiffness
+		global_stiffness[rotation_b][rotation_b] += rotational_stiffness
+		global_stiffness[rotation_a][rotation_b] -= rotational_stiffness
+		global_stiffness[rotation_b][rotation_a] -= rotational_stiffness
+		var axis: Vector2 = connection.get("local_axis", Vector2.RIGHT)
+		connection_cache.append({
+			"id": connection_id,
+			"node_a": node_a,
+			"node_b": node_b,
+			"translational_stiffness_n_m": translational_stiffness,
+			"rotational_stiffness_nm_rad": rotational_stiffness,
+			"axis": axis.normalized()
 		})
 
 	var fixed_dofs: Dictionary = {}
@@ -195,6 +234,29 @@ func analyze(
 			"maximum_internal_deflection_m": internal_deflection
 		}
 
+	var connection_results: Dictionary = {}
+	for data in connection_cache:
+		var displacement_a: Vector3 = node_displacements[data["node_a"]]
+		var displacement_b: Vector3 = node_displacements[data["node_b"]]
+		var relative_translation := Vector2(displacement_b.x - displacement_a.x, displacement_b.y - displacement_a.y)
+		var axis: Vector2 = data["axis"]
+		var normal_axis := Vector2(-axis.y, axis.x)
+		var axial_force := float(data["translational_stiffness_n_m"]) * relative_translation.dot(axis)
+		var shear_force := float(data["translational_stiffness_n_m"]) * relative_translation.dot(normal_axis)
+		var moment := float(data["rotational_stiffness_nm_rad"]) * (displacement_b.z - displacement_a.z)
+		connection_results[data["id"]] = {
+			"source": "linear_static_structural_solver",
+			"axial_force_n": axial_force,
+			"tensile_force_n": maxf(axial_force, 0.0),
+			"compression_force_n": maxf(-axial_force, 0.0),
+			"shear_force_n": absf(shear_force),
+			"signed_shear_force_n": shear_force,
+			"moment_nm": absf(moment),
+			"signed_moment_nm": moment,
+			"relative_translation_m": relative_translation.length(),
+			"relative_rotation_rad": displacement_b.z - displacement_a.z
+		}
+
 	return {
 		"valid": true,
 		"error": "",
@@ -205,8 +267,33 @@ func analyze(
 		"displacement_vector_si": displacement_vector,
 		"node_displacements": node_displacements,
 		"support_reactions": reactions,
-		"element_results": element_results
+		"element_results": element_results,
+		"connection_results": connection_results
 	}
+
+
+func _validate_connection(connection: Variant, node_index_by_id: Dictionary, seen_ids: Dictionary) -> String:
+	if not connection is Dictionary:
+		return "접합 입력은 Dictionary여야 해."
+	for key in ["id", "node_a", "node_b", "translational_stiffness_n_m", "rotational_stiffness_nm_rad"]:
+		if not connection.has(key):
+			return "접합에 %s 값이 없어." % key
+	var connection_id := str(connection["id"])
+	if connection_id.is_empty() or seen_ids.has(connection_id):
+		return "접합 ID가 비었거나 중복돼: %s" % connection_id
+	seen_ids[connection_id] = true
+	var node_a := str(connection["node_a"])
+	var node_b := str(connection["node_b"])
+	if node_a == node_b or not node_index_by_id.has(node_a) or not node_index_by_id.has(node_b):
+		return "접합 %s의 절점 참조가 잘못됐어." % connection_id
+	for key in ["translational_stiffness_n_m", "rotational_stiffness_nm_rad"]:
+		var stiffness := float(connection[key])
+		if not is_finite(stiffness) or stiffness < 0.0:
+			return "접합 %s의 %s는 유한한 0 이상 값이어야 해." % [connection_id, key]
+	var axis: Vector2 = connection.get("local_axis", Vector2.RIGHT)
+	if not axis.is_finite() or axis.length_squared() <= 1.0e-12:
+		return "접합 %s의 local_axis는 유효한 방향이어야 해." % connection_id
+	return ""
 
 
 func _validate_element(element: Variant, node_index_by_id: Dictionary, materials: Dictionary, seen_ids: Dictionary) -> String:
