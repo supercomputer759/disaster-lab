@@ -1,6 +1,11 @@
 [gd_scene format=3 uid="uid://dqdwq4vrqlqgl"]
 
 [ext_resource type="Script" uid="uid://ba0vshn4yl2xb" path="res://scripts/structure/disaster_lab.gd" id="1_o5qli"]
+[ext_resource type="Script" path="res://scripts/ui/simulation_visualization_hud.gd" id="2_visualization"]
 
 [node name="DisasterLab" type="Node2D" unique_id=203268307]
 script = ExtResource("1_o5qli")
+
+[node name="SimulationVisualizationHUD" type="CanvasLayer" parent="."]
+layer = 0
+script = ExtResource("2_visualization")
