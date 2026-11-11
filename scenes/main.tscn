@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dqdwq4vrqlqgl"]
+
+[ext_resource type="Script" uid="uid://ba0vshn4yl2xb" path="res://scripts/structure/disaster_lab.gd" id="1_o5qli"]
+
+[node name="DisasterLab" type="Node2D" unique_id=203268307]
+script = ExtResource("1_o5qli")

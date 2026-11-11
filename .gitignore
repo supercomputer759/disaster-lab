@@ -1,0 +1,21 @@
+# Godot imports, editor cache, export output
+.godot/
+.godot-cache-backup-*/
+.export/
+export.cfg
+export_presets.cfg
+
+# Local secrets and machine-specific environment
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
