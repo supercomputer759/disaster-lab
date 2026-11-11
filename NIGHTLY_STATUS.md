@@ -122,3 +122,13 @@
 - **GitHub Push:** 성공 — `main` upstream으로 푸시했고 `git ls-remote origin refs/heads/main`에서 같은 커밋 해시를 확인했다. 이 상태 보고 갱신은 별도 문서 커밋으로 푸시한다.
 - **오류 및 미해결 문제:** 비유한 부재 물리 상태 문제로 변위·가속도·층간변위 그래프의 실제 결과가 없다. 응력·변형률 표시는 선형 정적 솔버 단부력으로 구한 상한이며, 단면 분포해석 결과가 아니다. 접합 손상, 균열 누적, 좌굴 및 파괴 상태 데이터는 기본 UI/게임 루프가 아직 공급하지 않는다. 따라서 TASK 09 완료로 판정하지 않는다.
 - **다음 작업:** 기존 초기 물리 상태의 비유한 값을 해결하고 유효한 시간 이력 표본을 확보한 뒤, 솔버의 손상/균열/좌굴 데이터와 기본 프레임 표시를 연결해 TASK 09 검증을 마친다.
+
+## TASK 10 — Regression & Integration Tests
+
+- **상태:** 진행 중 — 전용 모듈 회귀 씬은 통과했지만 기본 5층 구조 안정성 및 통합 실험이 실패해 전체 회귀 기준을 통과하지 못했다.
+- **구현한 기능:** `scenes/tests/connection_behavior_validation.tscn`에서 핀 힌지의 회전 허용과 강접합의 회전 억제를 검증하는 5개 조건을 추가했다. [`scenes/tests/README.md`](scenes/tests/README.md)에 테스트 실행 방법과 결과 태그를 정리했고 [`TASK10_REGRESSION_REPORT.md`](TASK10_REGRESSION_REPORT.md)에 핵심 12 시스템 및 실험 A–H 결과를 기록했다.
+- **실행한 테스트와 결과:** Godot 4.7.1 MCP에서 프레임 솔버 22, 접합 회전 5, 파괴 접합 42, 중앙 파단 27, 재료 31, 파괴역학 20 checks 모두 통과. 27개 GDScript `script_check` 유효, 에디터 오류 콘솔 0건. 기본 5층 가새 ON 무지진 10초, 가새 OFF 무지진 1초, 지진 반복 2회는 모두 물리 비정상값과 0 응답을 반환했다. 기본 씬의 C1-L 기둥과 B1-B1 보 파단은 강체 개수만 45→46으로 바뀌었고 선/각운동량 오차가 비유한 값이었다. `user://earthquake_validation.csv`에 실패 상태가 저장되는 것을 확인했다.
+- **Git commit:** `2bdf5fae54101f32765682bb514be12f30f30f1a` — `test: add integration regression report and connection checks` (TASK 10 테스트/문서 4개 파일만 포함).
+- **GitHub Push:** 성공 — `main` upstream에 푸시했다. 보고 상태 갱신은 별도 문서 커밋 후 확인한다.
+- **오류 및 미해결 문제:** 기본 5층 초기화 후 45개 부재의 물리 좌표/속도가 비유한 상태이며 `Vector2 cannot be normalized` 경고가 난다. 따라서 가새·접합 방식·강도 비교, 반복 지진 응답의 물리적 재현성, 실제 기둥/보 파단, 5층 동적 연쇄 붕괴, 시간 이력 그래프를 통합 검증할 수 없다. 전용 solver 테스트 통과는 통합 동역학의 성공이 아니다. TASK 10 완료로 표시하지 않는다.
+- **다음 작업:** TASK 01 초기 물리 비유한 값의 원인을 수정하고 5층 중력 10초 안정성을 먼저 통과시킨 뒤 A–H 통합 실험을 다시 수행한다.
