@@ -157,7 +157,7 @@ static func progressive_reanalysis(model: Dictionary, initially_removed_ids: Arr
 			break
 		var solver_result: Dictionary = SOLVER.new().analyze(
 			model["nodes"], active_elements, model["materials"], model["loads"], model["supports"], model.get("connections", []),
-			model.get("thermal_strains_by_element", {})
+			model.get("thermal_strains_by_element", {}), model.get("element_loads_local_by_id", {})
 		)
 		if not bool(solver_result.get("valid", false)):
 			failure_cause = str(solver_result.get("error", "강성행렬 해석 실패"))

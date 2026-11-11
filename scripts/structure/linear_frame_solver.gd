@@ -16,7 +16,8 @@ func analyze(
 	loads: Dictionary,
 	supports: Dictionary,
 	connections: Array = [],
-	thermal_strains_by_element: Dictionary = {}
+	thermal_strains_by_element: Dictionary = {},
+	element_loads_local_by_id: Dictionary = {}
 ) -> Dictionary:
 	var node_ids: Array[String] = []
 	var node_positions: Array[Vector2] = []
@@ -89,9 +90,16 @@ func analyze(
 		var thermal_local_load := _zero_vector(6)
 		thermal_local_load[0] = -elastic_modulus_pa * area_m2 * thermal_strain
 		thermal_local_load[3] = elastic_modulus_pa * area_m2 * thermal_strain
+		var element_load: Array = element_loads_local_by_id.get(element_id, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+		if element_load.size() != 6:
+			return _error("요소 %s의 등가 절점하중은 로컬 6자유도 값이어야 해." % element_id)
+		var local_applied_load := _zero_vector(6)
 		for local_dof in range(6):
+			if not is_finite(float(element_load[local_dof])):
+				return _error("요소 %s의 등가 절점하중이 유한하지 않아." % element_id)
+			local_applied_load[local_dof] = thermal_local_load[local_dof] + float(element_load[local_dof])
 			for global_dof in range(6):
-				load_vector[element_dofs[global_dof]] += transform[local_dof][global_dof] * thermal_local_load[local_dof]
+				load_vector[element_dofs[global_dof]] += transform[local_dof][global_dof] * local_applied_load[local_dof]
 		element_cache.append({
 			"id": element_id,
 			"material_id": str(element["material_id"]),
@@ -107,7 +115,7 @@ func analyze(
 			"depth_m": depth_m,
 			"local_stiffness": local_stiffness,
 			"thermal_strain": thermal_strain,
-			"thermal_local_load": thermal_local_load,
+			"local_applied_load": local_applied_load,
 			"transform": transform,
 			"dofs": element_dofs
 		})
@@ -209,7 +217,7 @@ func analyze(
 		var local_displacement := _local_displacement(displacement_vector, data["dofs"], data["transform"])
 		var local_end_forces := _matrix_vector(data["local_stiffness"], local_displacement)
 		for local_dof in range(6):
-			local_end_forces[local_dof] -= float(data["thermal_local_load"][local_dof])
+			local_end_forces[local_dof] -= float(data["local_applied_load"][local_dof])
 		var axial_i := -float(local_end_forces[0])
 		var axial_j := float(local_end_forces[3])
 		var shear_i := float(local_end_forces[1])
