@@ -31,10 +31,10 @@
 
 ## TASK 03 — Nightly Status Report
 
-- **상태:** 진행 중
-- **구현한 기능:** Queue별 상태, 기능, 테스트, Git 기록, Push 결과, 미해결 문제와 다음 작업을 기록하는 이 보고서.
-- **실행한 테스트와 결과:** 파일 작성 후 필수 항목·UTF-8 인코딩·Git diff 검사를 확인할 예정.
-- **Git commit:** 대기 중.
-- **GitHub Push:** 대기 중.
+- **상태:** 완료
+- **구현한 기능:** Queue별 상태, 기능, 테스트, Git 기록, Push 결과, 미해결 문제와 다음 작업을 기록하는 보고서 파일을 추가했다.
+- **실행한 테스트와 결과:** 필수 항목 검사 통과, UTF-8 무BOM 확인, git diff --check 통과.
+- **Git commit:** eba12f0a1e8c74d68765457fbc4f7bca02b5e72c — docs: add nightly task status report
+- **GitHub Push:** 성공 — main 브랜치의 origin/main에 반영 확인.
 - **오류 및 미해결 문제:** 없음.
-- **다음 작업:** 이 보고서 파일만 커밋·푸시하고 원격 반영을 확인한다.
+- **다음 작업:** TASK 01의 다중 Joint 비정상 물리값 원인을 단계별로 격리한다.
