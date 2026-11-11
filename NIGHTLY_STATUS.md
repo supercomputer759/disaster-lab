@@ -109,6 +109,6 @@
 - **실행한 테스트와 결과:** Godot 4.7.1 MCP 씬 `res://scenes/tests/failure_mechanics_validation.tscn` 실행: 20 checks, 0 failures. 양단 힌지 Euler 임계하중 219.9 kN, 양단 고정 879.6 kN, 고정-자유 55.0 kN으로 K 경계조건 영향을 확인했다. Miner 테스트는 기준 S-N 수명 27 cycles에서 10+10+8 cycles 누적 후 D≈1.037로 피로 파괴 상태를 확인했다. 솔버 정상응력으로 인장 한계 초과 균열 개시와 부재 끝 위치를 계산했다. 포털 프레임의 좌측 기둥 요소 제거 전후 우측 기둥 최대 정상응력은 45 MPa에서 90 MPa로 증가했고, 용량 초과 부재 연쇄 제거 후 구조해석 특이행렬로 붕괴 상태를 반환했다. 수정 GDScript 2개 `script_check` 통과, 테스트 런타임 출력에 오류 없음.
 - **모델 한계:** Euler 식은 이상적인 탄성 프리즘 기둥이며 초기 휨·잔류응력·비탄성/국부/비틀림 좌굴은 제외한다. K는 사용자가 넣는 이상 경계조건 계수이며 조인트 회전강성에서 자동 산정하지 않는다. Miner 모델은 사용자 제공 단일 구간 S-N 기준강도·지수로 평균응력, 산포, 환경 영향을 다루지 않는다. 균열 위치는 솔버 단부 응력 중 큰 끝을 고르는 요소 수준 근사다. 재분배/연쇄 제거는 정적 선형 재해석이며 제거 순간의 동적 증폭, 접촉, 재료 비선형성, 실제 RigidBody 분리는 수행하지 않는다.
 - **Git commit:** `03087a35590949eeac0c5401ec3908c975ede8d8` — `feat: add solver-based failure mechanics` (TASK 08 코어와 검증 씬 3개 파일만 포함).
-- **GitHub Push:** 성공 — `main`의 upstream에 Push 완료. `git ls-remote origin refs/heads/main`에서 `03087a35590949eeac0c5401ec3908c975ede8d8` 반영 확인. 이 보고서 갱신도 별도 문서 커밋으로 Push한다.
+- **GitHub Push:** 성공 — `main`의 upstream에 Push 완료. `git ls-remote origin refs/heads/main`에서 `03087a35590949eeac0c5401ec3908c975ede8d8` 반영 확인. TASK 08 보고서 갱신도 별도 문서 커밋으로 Push 완료했다.
 - **오류 및 미해결 문제:** 전용 해석 모델의 확인이 기본 5층 구조에서 좌굴/피로/연쇄 붕괴가 발생함을 뜻하지 않는다. 대시보드 입력, 기본 부재/접합 등록, 실제 Joint·RigidBody 파괴 연동이 남아 있다. 기존 5층 물리 NaN 문제도 미해결이다.
 - **다음 작업:** 기본 구조의 각 부재에 solver-backed 실패 데이터를 공급하고, 손상/좌굴 한계 초과를 실제 파괴·하중 재분배 루프에 연결한다. 5층 동역학은 안정성 문제 해결 후 별도로 검증한다.
