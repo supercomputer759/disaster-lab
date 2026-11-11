@@ -51,6 +51,6 @@
   - D: 가새 OFF, 1.20g / 8Hz, 10초 — 실패
   - 상세 원시 기록: `reports/earthquake_validation.csv`
 - **Git commit:** 구현 파일은 없음 — 네 물리 실험 실패로 커밋하지 않음. 실패 기록 문서 커밋 `71ca4e3df73a856485b802ba558f4b4a347aecc9` — `docs: record earthquake validation results`.
-- **GitHub Push:** 보고서와 CSV만 포함한 `71ca4e3`를 `main`에서 `origin/main`으로 Push 성공. 보고서의 최종 커밋 정보 갱신은 후속 문서 커밋으로 Push 예정.
+- **GitHub Push:** 보고서와 CSV만 포함한 `71ca4e3df73a856485b802ba558f4b4a347aecc9`를 `main`에서 `origin/main`으로 Push 성공. 최종 보고 정보 갱신 문서 커밋 `91afd3339c5f2ceab83080bd92acfb7ddc0b8bca`도 Push 완료.
 - **오류 및 미해결 문제:** 5층 강체 프레임의 물리 상태가 모든 조건에서 비정상값이 되어 계측 지표가 신뢰 가능한 값으로 완성되지 않았다. 응답 가속도는 물리엔진 직접 출력이 아닌 속도 표본의 유한 차분값이다. 현재 120Hz는 8Hz 입력을 주기당 15번 표본화한다.
 - **다음 작업:** TASK 01의 물리 안정성/NaN 원인을 해결하고, 동일 네 조건을 재실행해 유효한 응답 비교를 수행한다.
