@@ -70,3 +70,13 @@
 - **GitHub Push:** 성공 — `main`에서 `origin/main`에 커밋 `439995a` 반영.
 - **오류 및 미해결 문제:** 선형 정적 해석 범위다. 요소 분포하중 입력과 동적/비선형 해석은 포함하지 않았다. 새 API는 기존 대시보드의 동역학 표시와 결합하지 않았다.
 - **다음 작업:** 별도 SI 하중 케이스를 입력하고 이 솔버의 절점변위·요소력을 대시보드에 표시하는 설계 UI 연결.
+
+## TASK 05 — Breakable Connections
+
+- **상태:** 진행 중 — 파괴 코어와 검증 씬은 완료했지만, 기본 5층 씬의 해석 주기 및 UI에 연결하지 않았다.
+- **구현한 기능:** `LinearFrameSolver`에 접합별 병진 강성(N/m), 회전 강성(N·m/rad)을 전역 강성행렬에 조립하고, 상대 변위·회전으로 접합 인장/압축/전단력과 모멘트를 계산하는 출력을 추가했다. `BreakableConnectionSystem`은 연결마다 네 허용강도와 두 강성을 독립 저장하며, 구조해석 수요가 초과하면 실제 `Joint2D`를 해제하고 연결 강체를 깨우며 파괴 위치 마커·이벤트 신호·로그를 남긴다. 고정 지점의 `PhysicsBody2D`도 등록 가능하다.
+- **실행한 테스트와 결과:** Godot 4.7.1 MCP 검증 씬 `res://scenes/tests/breakable_connection_validation.tscn`에서 42개 확인 통과, 실패 0. 인장·압축·전단·모멘트별 solver 하중 수요와 독립 파괴, 낮은/높은 허용강도 비교, 실제 `PinJoint2D` 해제, 연결 강체 낙하와 바닥 충돌, 하류 접합 유지 및 이벤트/위치 마커를 확인했다. 수정한 GDScript 4개 `script_check` 통과, 실행 후 오류 콘솔 비어 있음. 전체 5층 게임 루프에서의 파괴 검증은 실행하지 않았다.
+- **Git commit:** `766aa01b18a3486e2fc7fcf28660b7a9c76a7e7e` — `feat: add solver-driven breakable connections` (TASK 05 파일 5개만 포함).
+- **GitHub Push:** 성공 — `main`에 Push하고 GitHub에서 해당 커밋 및 변경 내역을 확인했다.
+- **오류 및 미해결 문제:** 기본 프레임 생성/해석 루프가 아직 `BreakableConnectionSystem.solver_inputs()`와 `evaluate_solver_result()`를 호출하지 않는다. 접합 용량을 편집하는 UI도 없다. 파괴 판정은 선형 정적 구조해석 결과 기반이며 동적 실시간 접합 반력으로 표현하지 않는다.
+- **다음 작업:** 구조 생성 시 각 접합의 독립 강도·강성을 등록하고 활성 해석 결과로 파괴 시스템을 구동하며, 대시보드에서 속성을 편집하고 실제 프레임 붕괴를 검증한다.
