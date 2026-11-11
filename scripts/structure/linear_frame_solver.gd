@@ -69,6 +69,8 @@ func analyze(
 		var sine := delta.y / length_m
 		var material: Dictionary = materials[str(element["material_id"])]
 		var elastic_modulus_pa := float(material["elastic_modulus_pa"])
+		# 재료 사전은 해석 중 원본이 바뀌어도 결과가 흔들리지 않도록 요소별로 복사해 둬.
+		var material_properties: Dictionary = material.duplicate(true)
 		var area_m2 := float(element["area_m2"])
 		var inertia_m4 := float(element["inertia_m4"])
 		var depth_m := float(element["depth_m"])
@@ -83,6 +85,7 @@ func analyze(
 		element_cache.append({
 			"id": element_id,
 			"material_id": str(element["material_id"]),
+			"material_properties": material_properties,
 			"node_i": node_i,
 			"node_j": node_j,
 			"length_m": length_m,
@@ -214,7 +217,13 @@ func analyze(
 			maxf(absf(stress_j_top), absf(stress_j_bottom))
 		) / elastic_modulus_pa
 		var internal_deflection := _maximum_internal_deflection(local_displacement, float(data["length_m"]))
+		var material_evaluation := _evaluate_material_limits(
+			data["material_properties"],
+			[stress_i_top, stress_i_bottom, stress_j_top, stress_j_bottom],
+			[shear_i, shear_j], area_m2, maximum_normal_strain
+		)
 		element_results[data["id"]] = {
+			"material_id": data["material_id"],
 			"node_i": data["node_i"],
 			"node_j": data["node_j"],
 			"length_m": data["length_m"],
@@ -231,7 +240,8 @@ func analyze(
 			"normal_stress_j_bottom_pa": stress_j_bottom,
 			"axial_strain": axial_strain,
 			"maximum_normal_strain": maximum_normal_strain,
-			"maximum_internal_deflection_m": internal_deflection
+			"maximum_internal_deflection_m": internal_deflection,
+			"material_limit_evaluation": material_evaluation
 		}
 
 	var connection_results: Dictionary = {}
@@ -261,6 +271,7 @@ func analyze(
 		"valid": true,
 		"error": "",
 		"units": {"length": "m", "force": "N", "moment": "N·m", "stress": "Pa", "strain": "1", "rotation": "rad"},
+		"material_model_note": "Poisson ratio is stored with the material but is not used by this 2D Euler-Bernoulli frame formulation. Shear stress demand is |V|/A and is an average-section proxy.",
 		"node_ids": node_ids,
 		"global_stiffness_matrix_n_m": global_stiffness,
 		"load_vector_si": load_vector,
@@ -269,6 +280,55 @@ func analyze(
 		"support_reactions": reactions,
 		"element_results": element_results,
 		"connection_results": connection_results
+	}
+
+
+func _evaluate_material_limits(material: Dictionary, normal_stresses: Array, shear_forces: Array, area_m2: float, maximum_strain: float) -> Dictionary:
+	var max_tension_pa := 0.0
+	var max_compression_pa := 0.0
+	for stress_variant in normal_stresses:
+		var stress_pa := float(stress_variant)
+		max_tension_pa = maxf(max_tension_pa, stress_pa)
+		max_compression_pa = maxf(max_compression_pa, -stress_pa)
+	var max_shear_stress_pa := maxf(absf(float(shear_forces[0])), absf(float(shear_forces[1]))) / area_m2
+	var utilization := 0.0
+	var ratios: Dictionary = {}
+	for entry in [
+		["tensile", "tensile_strength_pa", max_tension_pa],
+		["compressive", "compressive_strength_pa", max_compression_pa],
+		["shear", "shear_strength_pa", max_shear_stress_pa]
+	]:
+		var key: String = entry[0]
+		var capacity_key: String = entry[1]
+		if material.has(capacity_key) and material[capacity_key] != null:
+			var capacity_pa := float(material[capacity_key])
+			if capacity_pa > 0.0:
+				var ratio := float(entry[2]) / capacity_pa
+				ratios[key] = ratio
+				utilization = maxf(utilization, ratio)
+	var yield_ratio: Variant = null
+	if material.has("yield_strength_pa") and material["yield_strength_pa"] != null:
+		var yield_strength_pa := float(material["yield_strength_pa"])
+		if yield_strength_pa > 0.0:
+			yield_ratio = maxf(max_tension_pa, max_compression_pa) / yield_strength_pa
+			ratios["yield"] = yield_ratio
+			utilization = maxf(utilization, float(yield_ratio))
+	var fracture_ratio := 0.0
+	if material.has("fracture_limit_strain") and float(material["fracture_limit_strain"]) > 0.0:
+		fracture_ratio = maximum_strain / float(material["fracture_limit_strain"])
+		ratios["fracture_strain"] = fracture_ratio
+		utilization = maxf(utilization, fracture_ratio)
+	return {
+		"source": "linear_static_structural_solver",
+		"tensile_demand_pa": max_tension_pa,
+		"compressive_demand_pa": max_compression_pa,
+		"average_shear_demand_proxy_pa": max_shear_stress_pa,
+		"maximum_normal_strain": maximum_strain,
+		"yield_utilization": yield_ratio,
+		"utilization_by_limit": ratios,
+		"maximum_utilization": utilization,
+		"exceeds_provided_limits": utilization > 1.0,
+		"failure_prediction_note": "선형 정적 해석 수요와 제공된 대표 한계의 비교값이며, 동적 파괴 예측이나 인증 판정이 아님."
 	}
 
 
